@@ -3,146 +3,166 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>สารภาพไม่เปิดเผยตัวตน</title>
+<title>สารภาพใจ</title>
 
 <style>
-/* === CSS เดิมของเธอ (ไม่เปลี่ยน) === */
 *{margin:0;padding:0;box-sizing:border-box}
 body{
-font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
-background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px
+font-family:'Segoe UI',Tahoma;
+background:linear-gradient(135deg,#667eea,#764ba2);
+min-height:100vh;
+display:flex;justify-content:center;align-items:center;padding:20px
 }
 .container{
-background:rgba(255,255,255,.95);
-border-radius:20px;
-box-shadow:0 20px 40px rgba(0,0,0,.1);
-padding:40px;max-width:600px;width:100%
+background:#fff;border-radius:20px;
+max-width:600px;width:100%;
+padding:30px;box-shadow:0 20px 40px rgba(0,0,0,.15)
 }
-.header{text-align:center;margin-bottom:30px}
-.header h1{font-size:2.5em;margin-bottom:10px}
-.stats{text-align:center;margin-bottom:30px;padding:20px;background:rgba(102,126,234,.1);border-radius:15px}
-.form-group{margin-bottom:20px}
-label{display:block;margin-bottom:8px;font-weight:600}
-textarea,select{
-width:100%;padding:12px;border-radius:10px;border:2px solid #e1e1e1;font-size:16px
+h1{text-align:center;margin-bottom:10px}
+.stats{text-align:center;margin-bottom:20px}
+.form-group{margin-bottom:15px}
+textarea,select,input{
+width:100%;padding:10px;border-radius:10px;
+border:2px solid #ddd;font-size:16px
 }
-.submit-btn{
-width:100%;padding:15px;border:none;border-radius:25px;
-background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-color:white;font-size:18px;cursor:pointer
+button{
+padding:10px 20px;border:none;border-radius:20px;
+background:#667eea;color:white;cursor:pointer
 }
 .confession-item{
-background:#f8f9fa;border-radius:15px;padding:20px;margin-bottom:20px;
-border-left:5px solid #667eea
+background:#f7f7f7;padding:15px;border-radius:15px;
+margin-top:15px;border-left:5px solid #667eea
 }
-.confession-meta{display:flex;justify-content:space-between;margin-bottom:10px;font-size:.9em}
-.anonymous-id{font-weight:600;color:#764ba2}
+.meta{display:flex;justify-content:space-between;font-size:14px;color:#666}
+.actions{margin-top:10px;display:flex;gap:10px}
+.comment{
+background:#eee;padding:8px;border-radius:10px;
+margin-top:5px;font-size:14px
+}
 </style>
 </head>
 
 <body>
-
 <div class="container">
-  <div class="header">
-    <h1>💭 สารภาพใจ</h1>
-    <p>แบ่งปันความในใจแบบไม่เปิดเผยตัวตน</p>
-  </div>
+  <h1>💭 สารภาพใจ</h1>
+  <p style="text-align:center;margin-bottom:15px">ไม่เปิดเผยตัวตน</p>
 
   <div class="stats">
-    <h3>📊 สถิติการสารภาพ</h3>
-    <p>มีคนสารภาพแล้ว <span id="confessionCount">0</span> ครั้ง</p>
+    มีการสารภาพแล้ว <b id="count">0</b> ครั้ง
   </div>
 
-  <form id="confessionForm">
+  <form id="form">
     <div class="form-group">
-      <label>หมวดหมู่</label>
       <select id="category" required>
         <option value="">เลือกหมวดหมู่</option>
         <option value="ความรัก">💕 ความรัก</option>
         <option value="ครอบครัว">👨‍👩‍👧‍👦 ครอบครัว</option>
         <option value="เพื่อน">👫 เพื่อน</option>
-        <option value="การงาน">💼 การงาน</option>
         <option value="ความลับ">🤫 ความลับ</option>
       </select>
     </div>
-
     <div class="form-group">
-      <label>สิ่งที่อยากสารภาพ</label>
-      <textarea id="confession" required></textarea>
+      <textarea id="text" placeholder="พิมพ์ความในใจ..." required></textarea>
     </div>
-
-    <button class="submit-btn">🚀 ส่งการสารภาพ</button>
+    <button>🚀 ส่งสารภาพ</button>
   </form>
 
-  <div style="margin-top:40px">
-    <h2 style="text-align:center">💬 การสารภาพล่าสุด</h2>
-    <div id="confessionsList"></div>
-  </div>
+  <div id="list"></div>
 </div>
 
-<!-- 🔥 Firebase SDK -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <script>
-/* ===== ใส่ firebaseConfig ของเธอตรงนี้ ===== */
+/* 🔴 ใส่ firebaseConfig ของคุณ */
 const firebaseConfig = {
-  apiKey: "AIzaSyAriXgtw7Ko0ErVuP0pHtnN3v_EnG2PW50",
-  authDomain: "chanidapa-efdc0.firebaseapp.com",
-  projectId: "chanidapa-efdc0",
-  storageBucket: "chanidapa-efdc0.firebasestorage.app",
-  messagingSenderId:"1:113317187939:web:ad57f628b722a9f2c9c356",
-  appId: "G-YG2MYFN517"
+  apiKey: "XXXX",
+  authDomain: "XXXX",
+  projectId: "XXXX",
+  storageBucket: "XXXX",
+  messagingSenderId: "XXXX",
+  appId: "XXXX"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* ===== ฟังก์ชัน ===== */
-function randomId(){
- const a=['ลึกลับ','หวาน','เงียบ','ฝันดี','เศร้า'];
- const b=['นก','ดาว','ฟ้า','ใจ','เงา'];
- return a[Math.floor(Math.random()*a.length)] +
-        b[Math.floor(Math.random()*b.length)] +
+/* ===== util ===== */
+function anon(){
+ const a=['ลึกลับ','ฝันดี','เศร้า','หวาน','เงียบ'];
+ const b=['ดาว','นก','ฟ้า','ใจ','เงา'];
+ return a[Math.floor(Math.random()*5)] +
+        b[Math.floor(Math.random()*5)] +
         Math.floor(Math.random()*999);
 }
 
-document.getElementById("confessionForm").addEventListener("submit",async e=>{
+/* ===== submit ===== */
+form.addEventListener("submit", async e=>{
  e.preventDefault();
- const text=confession.value.trim();
- const cat=category.value;
- if(!text||!cat) return alert("กรอกให้ครบ");
-
  await db.collection("confessions").add({
-   text,category:cat,
-   anonymousId:randomId(),
+   text:text.value,
+   category:category.value,
+   anonymousId:anon(),
+   likes:0,
+   comments:[],
    createdAt:firebase.firestore.FieldValue.serverTimestamp()
  });
-
- confession.value="";
- category.value="";
+ text.value=""; category.value="";
 });
 
-/* ===== แสดงข้อมูล ===== */
+/* ===== realtime ===== */
 db.collection("confessions")
- .orderBy("createdAt","desc")
- .onSnapshot(snap=>{
-   confessionCount.textContent=snap.size;
-   confessionsList.innerHTML="";
-   snap.forEach(d=>{
-     const c=d.data();
-     confessionsList.innerHTML+=`
-     <div class="confession-item">
-       <div class="confession-meta">
-         <span class="anonymous-id">👤 ${c.anonymousId}</span>
-         <span>${c.category}</span>
-       </div>
-       <div>${c.text}</div>
-     </div>`;
-   });
- });
-</script>
+.orderBy("createdAt","desc")
+.onSnapshot(snap=>{
+ count.textContent=snap.size;
+ list.innerHTML="";
+ snap.forEach(doc=>{
+   const d=doc.data();
+   list.innerHTML+=`
+   <div class="confession-item">
+     <div class="meta">
+       <span>👤 ${d.anonymousId}</span>
+       <span>${d.category}</span>
+     </div>
 
+     <p style="margin-top:8px">${d.text}</p>
+
+     <div class="actions">
+       <button onclick="like('${doc.id}',${d.likes})">❤️ ${d.likes}</button>
+       <button onclick="showComment('${doc.id}')">💬 ${d.comments.length}</button>
+     </div>
+
+     <div id="c-${doc.id}" style="display:none">
+       <input id="i-${doc.id}" placeholder="คอมเมนต์">
+       <button onclick="comment('${doc.id}')">ส่ง</button>
+       ${d.comments.map(c=>`<div class="comment">💬 ${c}</div>`).join("")}
+     </div>
+   </div>`;
+ });
+});
+
+/* ===== like ===== */
+function like(id,likes){
+ db.collection("confessions").doc(id).update({
+   likes:likes+1
+ });
+}
+
+/* ===== comment ===== */
+function showComment(id){
+ const el=document.getElementById("c-"+id);
+ el.style.display=el.style.display==="none"?"block":"none";
+}
+
+function comment(id){
+ const input=document.getElementById("i-"+id);
+ if(!input.value.trim())return;
+ db.collection("confessions").doc(id).update({
+   comments:firebase.firestore.FieldValue.arrayUnion(input.value)
+ });
+ input.value="";
+}
+</script>
 </body>
 </html>
