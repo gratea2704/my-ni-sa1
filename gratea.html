@@ -1,0 +1,643 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>มหัศจรรย์คืนวันเพ็ญ ❤️</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+ overflow:hidden;background:#06111e;color:white;
+ font-family:Tahoma,sans-serif;
+ touch-action:pan-y;
+}
+canvas{
+ position:fixed;inset:0;width:100%;height:100%;
+ touch-action:none;
+}
+.header{
+ position:fixed;z-index:3;top:4%;width:100%;
+ text-align:center;pointer-events:none;padding:0 12px;
+ text-shadow:0 2px 12px #000;
+}
+.kicker{
+ font-size:10px;letter-spacing:5px;color:#f6d49b;
+}
+h1{
+ font-family:Georgia,serif;font-weight:normal;
+ font-size:clamp(25px,6vw,42px);
+ color:#ffe9c0;margin:9px 0;
+ text-shadow:0 0 25px #ffc66c;
+}
+.subtitle{
+ font-size:12px;line-height:1.8;color:#eee0cf;
+}
+.panel{
+ position:fixed;z-index:4;bottom:3%;left:0;
+ width:100%;text-align:center;padding:10px;
+ pointer-events:none;
+}
+.panel button{pointer-events:auto}
+button{
+ border:1px solid #ffe1a5;
+ border-radius:40px;padding:13px 23px;
+ background:linear-gradient(135deg,#ffe8b4,#c08a42);
+ color:#402914;font-weight:bold;font-size:14px;
+ box-shadow:0 0 25px #f4bb5a66;
+ cursor:pointer;margin:4px;
+}
+button:active{transform:scale(.95)}
+.info{
+ font-size:11px;color:#ffe5bd;margin:6px 0;
+ text-shadow:0 1px 5px black;
+}
+#letter{
+ display:none;position:fixed;z-index:10;inset:0;
+ background:#000b;align-items:center;justify-content:center;
+ padding:20px;
+}
+.paper{
+ max-width:340px;width:100%;background:#fff0d7;
+ color:#66472a;padding:28px 22px;text-align:center;
+ border-radius:8px;line-height:2;
+ box-shadow:0 0 40px #ffca75;
+}
+.paper input{
+ width:100%;padding:12px;border:1px solid #c5a16c;
+ border-radius:8px;margin:12px 0;
+}
+.paper button{margin:5px}
+@media(max-height:650px){
+ .header{top:2%}
+ .panel{bottom:1%}
+ h1{margin:4px}
+ .subtitle{font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<div class="header">
+ <div class="kicker">I LOVE YOU NA</div>
+ <h1>ลอยกระทง ลงกะเธอ</h1>
+ <div class="subtitle">
+  คืนนี้มีแสงจันทร์ มีสายน้ำ มีพลุ<br>
+  และมีเธออยู่ตรงนี้ ❤️
+ </div>
+</div>
+
+<div class="panel">
+ <div class="info" id="count">🪷 กระทง 0 ใบ</div>
+ <button onclick="createBoat()">🪷 สร้างกระทง</button>
+ <button onclick="createLantern()">🏮 ปล่อยโคมลอย</button>
+ <button onclick="showLetter()">💌 คำอธิษฐาน</button>
+ <div class="info">แตะลากกระทง แล้วปล่อยให้ลอยไปตามสายน้ำ</div>
+</div>
+
+<div id="letter">
+ <div class="paper">
+  <div style="font-size:35px">🌕</div>
+  <h2>คำอธิษฐานของเรา</h2>
+  <p id="wishText">ขอให้เรามีความสุขและรักกันไปนาน ๆ</p>
+  <input id="wishInput" placeholder="พิมพ์คำอธิษฐานของเรา...">
+  <button onclick="saveWish()">ส่งคำอธิษฐาน ❤️</button>
+  <button onclick="closeLetter()">ปิด</button>
+ </div>
+</div>
+
+<script>
+const canvas=document.getElementById("scene");
+const ctx=canvas.getContext("2d");
+
+let W,H,D,frame=0;
+let stars=[],boats=[],fireworks=[],rockets=[],lanterns=[];
+let particles=[],smokes=[],lights=[],people=[],ripples=[];
+let dragging=null;
+
+const colors=["#ffd66b","#ff91c5","#72d9ff"];
+
+function rand(a,b){return a+Math.random()*(b-a)}
+
+function resize(){
+ D=Math.min(devicePixelRatio||1,1.7);
+ W=innerWidth;H=innerHeight;
+ canvas.width=W*D;canvas.height=H*D;
+ ctx.setTransform(D,0,0,D,0,0);
+
+ stars=Array.from({length:Math.min(110,Math.floor(W/4))},()=>({
+  x:rand(0,W),y:rand(0,H*.48),r:rand(.4,1.5),p:rand(0,7)
+ }));
+
+ lights=[];
+ for(let i=0;i<45;i++){
+  lights.push({x:i*W/44,y:H*.475+Math.sin(i*.5)*8,
+   c:colors[i%3],p:rand(0,7)});
+ }
+
+ people=[];
+ for(let i=0;i<Math.min(48,Math.floor(W/12));i++){
+  people.push({x:rand(0,W),s:rand(.7,1.2),c:i%3});
+ }
+}
+addEventListener("resize",resize);
+resize();
+
+// =======================
+// ท้องฟ้าและพระจันทร์
+// =======================
+
+function drawSky(){
+ let g=ctx.createLinearGradient(0,0,0,H*.6);
+ g.addColorStop(0,"#030814");
+ g.addColorStop(.5,"#122a46");
+ g.addColorStop(1,"#546b7b");
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+ stars.forEach(s=>{
+  ctx.globalAlpha=.2+.8*Math.abs(Math.sin(frame*.025+s.p));
+  ctx.fillStyle="#fff5d8";
+  ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,7);ctx.fill();
+ });
+ ctx.globalAlpha=1;
+
+ let x=W*.76,y=H*.17,r=Math.min(W,H)*.075;
+ let glow=ctx.createRadialGradient(x,y,2,x,y,r*4);
+ glow.addColorStop(0,"#fff4c577");
+ glow.addColorStop(1,"#fff4c500");
+ ctx.fillStyle=glow;ctx.fillRect(x-r*4,y-r*4,r*8,r*8);
+
+ let m=ctx.createRadialGradient(x-r*.3,y-r*.3,1,x,y,r);
+ m.addColorStop(0,"#fffef0");
+ m.addColorStop(.8,"#f4e6c1");
+ m.addColorStop(1,"#c5ad7e");
+ ctx.fillStyle=m;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
+
+ // เมฆบาง ๆ
+ for(let i=0;i<5;i++){
+  let cx=(i*W*.27+frame*.08)%(W+150)-70;
+  let cy=H*.23+i*H*.045;
+  ctx.fillStyle="#a1b8c1";
+  ctx.globalAlpha=.035;
+  ctx.beginPath();ctx.ellipse(cx,cy,65,10,0,0,7);ctx.fill();
+ }
+ ctx.globalAlpha=1;
+}
+
+// =======================
+// ภูเขาและต้นไม้
+// =======================
+
+function drawMountains(){
+ ctx.fillStyle="#08171c";
+ ctx.beginPath();
+ ctx.moveTo(0,H*.48);
+ for(let x=0;x<=W+20;x+=20){
+  ctx.lineTo(x,H*.48-Math.sin(x*.012)*12-Math.sin(x*.027)*7);
+ }
+ ctx.lineTo(W,H*.61);ctx.lineTo(0,H*.61);ctx.fill();
+
+ // ต้นไม้
+ for(let i=0;i<13;i++){
+  let x=i*W/12;
+  ctx.fillStyle="#07140e";
+  ctx.fillRect(x-3,H*.40,6,H*.13);
+  for(let j=0;j<5;j++){
+   ctx.beginPath();
+   ctx.arc(x+Math.sin(j*2)*8,H*.40-j*8,14-j,0,7);
+   ctx.fill();
+  }
+ }
+}
+
+// =======================
+// ตลิ่งและงานวัด
+// =======================
+
+function drawStalls(){
+ let y=H*.445;
+
+ // พื้นตลิ่ง
+ let g=ctx.createLinearGradient(0,y,0,H*.56);
+ g.addColorStop(0,"#493729");
+ g.addColorStop(1,"#171d20");
+ ctx.fillStyle=g;ctx.fillRect(0,y,W,H*.12);
+
+ // ซุ้มร้านค้า
+ let count=Math.max(3,Math.floor(W/115));
+ for(let i=0;i<count;i++){
+  let x=i*W/count+5;
+  let sw=W/count-10;
+  let sh=Math.max(30,Math.min(60,H*.085));
+  let base=y+sh*.85;
+
+  ctx.fillStyle="#34251c";
+  ctx.fillRect(x+5,base-sh*.6,sw-10,sh*.6);
+
+  // หลังคาผ้าใบ
+  ctx.fillStyle=["#a33f39","#d69d4d","#476b6c"][i%3];
+  ctx.beginPath();
+  ctx.moveTo(x,base-sh*.6);
+  ctx.lineTo(x+sw/2,base-sh);
+  ctx.lineTo(x+sw,base-sh*.6);
+  ctx.closePath();ctx.fill();
+
+  // ไฟร้าน
+  ctx.fillStyle="#ffd48b";
+  ctx.shadowBlur=12;ctx.shadowColor="#ffb95a";
+  ctx.beginPath();ctx.arc(x+sw/2,base-sh*.48,3,0,7);ctx.fill();
+  ctx.shadowBlur=0;
+
+  ctx.fillStyle="#ffcf91";
+  ctx.font="10px Tahoma";
+  ctx.textAlign="center";
+  ctx.fillText(["ขนมไทย","ของกิน","ของฝาก","ร้านค้า"][i%4],x+sw/2,base-sh*.15);
+ }
+
+ // สายไฟประดับ
+ ctx.strokeStyle="#806d4d";
+ ctx.lineWidth=1;
+ ctx.beginPath();
+ ctx.moveTo(0,H*.43);
+ ctx.quadraticCurveTo(W*.5,H*.49,W,H*.43);
+ ctx.stroke();
+
+ lights.forEach(l=>{
+  let alpha=.45+.55*Math.abs(Math.sin(frame*.06+l.p));
+  ctx.globalAlpha=alpha;
+  ctx.fillStyle=l.c;
+  ctx.shadowBlur=12;ctx.shadowColor=l.c;
+  ctx.beginPath();ctx.arc(l.x,l.y,2.5,0,7);ctx.fill();
+ });
+ ctx.shadowBlur=0;ctx.globalAlpha=1;
+
+ // คนชมงานเป็นเงา
+ people.forEach(p=>{
+  let x=p.x,y=H*.535;
+  ctx.fillStyle="#0a1013";
+  ctx.beginPath();ctx.arc(x,y-13*p.s,5*p.s,0,7);ctx.fill();
+  ctx.fillRect(x-4*p.s,y-10*p.s,8*p.s,18*p.s);
+  if(p.c===0){
+   ctx.strokeStyle="#111819";ctx.lineWidth=3;
+   ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-5,y+9);ctx.stroke();
+  }
+ });
+}
+
+// =======================
+// แม่น้ำและแสงสะท้อน
+// =======================
+
+function drawWater(){
+ let top=H*.55;
+ let g=ctx.createLinearGradient(0,top,0,H);
+ g.addColorStop(0,"#31566b");
+ g.addColorStop(.3,"#173c52");
+ g.addColorStop(1,"#061625");
+ ctx.fillStyle=g;ctx.fillRect(0,top,W,H-top);
+
+ // แสงจันทร์
+ let mx=W*.76;
+ for(let i=0;i<75;i++){
+  let y=top+10+i*4;
+  let width=rand(12,35)*(i/30+.3);
+  ctx.globalAlpha=.12*(1-i/85);
+  ctx.fillStyle="#ffe8ba";
+  ctx.fillRect(mx-width/2+Math.sin(frame*.02+i)*12,y,width,1.4);
+ }
+ ctx.globalAlpha=1;
+
+ // คลื่นน้ำ
+ for(let i=0;i<48;i++){
+  let y=top+i*(H-top)/48;
+  ctx.beginPath();
+  for(let x=0;x<=W;x+=6){
+   let yy=y+Math.sin(x*.017+frame*.025+i)*2;
+   if(x===0)ctx.moveTo(x,yy);else ctx.lineTo(x,yy);
+  }
+  ctx.strokeStyle=`rgba(182,218,223,${.045+i*.001})`;
+  ctx.stroke();
+ }
+}
+
+// =======================
+// พลุและจรวด
+// =======================
+
+function launchFirework(){
+ if(rockets.length>6)return;
+ let x=rand(W*.08,W*.92);
+ let y=rand(H*.10,H*.36);
+ rockets.push({
+  x:x,y:H*.53,
+  tx:x,ty:y,
+  speed:rand(3,5),
+  color:colors[Math.floor(Math.random()*3)]
+ });
+}
+
+function explode(x,y,color){
+ let n=70;
+ for(let i=0;i<n;i++){
+  let a=Math.PI*2*i/n+rand(-.04,.04);
+  let speed=rand(1,4.8);
+  particles.push({
+   x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,
+   life:rand(45,85),max:85,
+   color:color,size:rand(1,3)
+  });
+ }
+ smokes.push({x,y,r:5,a:.25,life:60});
+}
+
+function drawFireworks(){
+ // ยิงพลุอัตโนมัติ
+ if(frame%65===0)launchFirework();
+ if(frame%113===0)launchFirework();
+
+ rockets.forEach((r,i)=>{
+  r.y-=r.speed;
+  ctx.strokeStyle=r.color;
+  ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(r.x,r.y+14);ctx.lineTo(r.x,r.y);ctx.stroke();
+  ctx.fillStyle="#fff";
+  ctx.beginPath();ctx.arc(r.x,r.y,2,0,7);ctx.fill();
+
+  if(r.y<=r.ty){
+   explode(r.x,r.y,r.color);
+   rockets.splice(i,1);
+  }
+ });
+
+ particles.forEach((p,i)=>{
+  p.x+=p.vx;p.y+=p.vy;
+  p.vy+=.045;
+  p.vx*=.985;p.vy*=.985;
+  p.life--;
+
+  let alpha=Math.max(0,p.life/p.max);
+  ctx.globalAlpha=alpha;
+  ctx.fillStyle=p.color;
+  ctx.shadowBlur=8;ctx.shadowColor=p.color;
+  ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,7);ctx.fill();
+
+  if(p.life<=0)particles.splice(i,1);
+ });
+ ctx.globalAlpha=1;ctx.shadowBlur=0;
+
+ // ควันจากพลุ
+ smokes.forEach((s,i)=>{
+  s.r+=.5;s.a-=.003;s.life--;
+  ctx.fillStyle=`rgba(160,167,177,${Math.max(0,s.a)})`;
+  ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,7);ctx.fill();
+  if(s.life<=0)smokes.splice(i,1);
+ });
+}
+
+// =======================
+// โคมลอย
+// =======================
+
+function createLantern(){
+ lanterns.push({
+  x:rand(W*.2,W*.8),
+  y:H*.55,
+  vx:rand(-.35,.35),
+  vy:rand(.65,1.2),
+  s:rand(.7,1.1),
+  phase:rand(0,7)
+ });
+}
+
+function drawLantern(l){
+ ctx.save();
+ ctx.translate(l.x,l.y);
+ ctx.scale(l.s,l.s);
+
+ let glow=ctx.createRadialGradient(0,0,2,0,0,30);
+ glow.addColorStop(0,"#ffcf6c88");
+ glow.addColorStop(1,"#ffcf6c00");
+ ctx.fillStyle=glow;ctx.fillRect(-30,-35,60,70);
+
+ ctx.fillStyle="#d68d40";
+ ctx.beginPath();
+ ctx.moveTo(-11,0);ctx.quadraticCurveTo(-16,-20,0,-28);
+ ctx.quadraticCurveTo(16,-20,11,0);
+ ctx.closePath();ctx.fill();
+
+ ctx.fillStyle="#ffedaa";
+ ctx.shadowBlur=15;ctx.shadowColor="#ffad39";
+ ctx.beginPath();ctx.ellipse(0,-5,5,8,0,0,7);ctx.fill();
+ ctx.shadowBlur=0;
+
+ ctx.strokeStyle="#b98244";
+ ctx.beginPath();ctx.moveTo(-9,0);ctx.lineTo(9,0);ctx.stroke();
+ ctx.restore();
+}
+
+function updateLanterns(){
+ lanterns.forEach((l,i)=>{
+  l.y-=l.vy;
+  l.x+=l.vx+Math.sin(frame*.02+l.phase)*.3;
+  drawLantern(l);
+  if(l.y<-60)lanterns.splice(i,1);
+ });
+}
+
+// =======================
+// กระทงใบตอง
+// =======================
+
+function drawLeaf(x,y,a){
+ ctx.save();ctx.translate(x,y);ctx.rotate(a);
+ ctx.fillStyle="#397d3d";
+ ctx.beginPath();
+ ctx.moveTo(0,0);
+ ctx.quadraticCurveTo(-17,-23,0,-32);
+ ctx.quadraticCurveTo(17,-23,0,0);
+ ctx.fill();
+ ctx.strokeStyle="#b6be70";
+ ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-30);ctx.stroke();
+ ctx.restore();
+}
+
+function drawBoat(b){
+ ctx.save();
+ ctx.translate(b.x,b.y);
+ let scale=Math.max(.48,Math.min(1.15,.65+(b.y-H*.55)/(H*.7)));
+ ctx.scale(scale,scale);
+ ctx.rotate(Math.sin(frame*.025+b.phase)*.035);
+
+ ctx.fillStyle="#020b14aa";
+ ctx.beginPath();ctx.ellipse(0,15,49,11,0,0,7);ctx.fill();
+
+ ctx.fillStyle="#9b5e2c";
+ ctx.beginPath();ctx.moveTo(-48,-2);
+ ctx.quadraticCurveTo(0,38,48,-2);
+ ctx.lineTo(35,13);ctx.quadraticCurveTo(0,27,-35,13);
+ ctx.closePath();ctx.fill();
+
+ for(let i=0;i<9;i++)drawLeaf((i-4)*8,-5,Math.PI+(i-4)*.14);
+
+ // กลีบดอกไม้
+ for(let i=0;i<16;i++){
+  let a=i*Math.PI/8;
+  ctx.save();
+  ctx.translate(Math.cos(a)*20,Math.sin(a)*9-12);
+  ctx.rotate(a);
+  ctx.fillStyle=i%2?"#f19bb5":"#fff0e1";
+  ctx.beginPath();ctx.ellipse(0,-7,5,11,0,0,7);ctx.fill();
+  ctx.restore();
+ }
+
+ // ดอกไม้กลางกระทง
+ ctx.fillStyle="#f8bf40";
+ for(let i=0;i<8;i++){
+  let a=i*Math.PI/4;
+  ctx.beginPath();ctx.arc(Math.cos(a)*5,-12+Math.sin(a)*3,3,0,7);ctx.fill();
+ }
+
+ // ธูป
+ ctx.strokeStyle="#a47a54";ctx.lineWidth=1.5;
+ for(let i=-1;i<=1;i++){
+  ctx.beginPath();ctx.moveTo(i*7,-12);ctx.lineTo(i*7,-37);ctx.stroke();
+ }
+
+ // เทียน
+ ctx.fillStyle="#fff1cf";ctx.fillRect(-3,-30,6,17);
+ let flick=Math.sin(frame*.3+b.phase)*2;
+ let flame=ctx.createRadialGradient(0,-35,1,0,-35,10);
+ flame.addColorStop(0,"#fff9d5");
+ flame.addColorStop(.4,"#ffbd55");
+ flame.addColorStop(1,"#ff840000");
+ ctx.fillStyle=flame;
+ ctx.beginPath();ctx.ellipse(0,-35,5,9+flick,0,0,7);ctx.fill();
+
+ ctx.restore();
+}
+
+function createBoat(){
+ if(boats.length>=35)boats.shift();
+ boats.push({
+  x:W*.5+rand(-W*.18,W*.18),
+  y:H*.78,
+  vx:rand(.15,.4),
+  vy:rand(-.06,.03),
+  phase:rand(0,7),
+  age:0
+ });
+ updateCount();
+}
+
+function updateCount(){
+ document.getElementById("count").textContent="🪷 กระทง "+boats.length+" ใบ";
+}
+
+function updateBoats(){
+ boats.forEach((b,i)=>{
+  if(b!==dragging){
+   b.x+=b.vx+Math.sin(frame*.02+b.phase)*.17;
+   b.y+=b.vy+Math.sin(frame*.025+b.phase)*.12;
+  }
+  b.age++;
+  drawBoat(b);
+  if(b.x>W+100||b.age>2600)boats.splice(i,1);
+ });
+ updateCount();
+}
+
+// =======================
+// การลากกระทงด้วยนิ้ว
+// =======================
+
+function position(e){
+ let r=canvas.getBoundingClientRect();
+ return {x:e.clientX-r.left,y:e.clientY-r.top};
+}
+
+canvas.addEventListener("pointerdown",e=>{
+ let p=position(e);
+ for(let i=boats.length-1;i>=0;i--){
+  let b=boats[i];
+  let s=Math.max(.48,Math.min(1.15,.65+(b.y-H*.55)/(H*.7)));
+  if(Math.hypot((p.x-b.x)/s,(p.y-b.y)/s)<55){
+   dragging=b;
+   dragging.ox=p.x-b.x;
+   dragging.oy=p.y-b.y;
+   canvas.setPointerCapture(e.pointerId);
+   break;
+  }
+ }
+});
+
+canvas.addEventListener("pointermove",e=>{
+ if(!dragging)return;
+ let p=position(e);
+ dragging.x=p.x-dragging.ox;
+ dragging.y=Math.max(H*.58,Math.min(H*.92,p.y-dragging.oy));
+});
+
+function releaseBoat(){
+ if(dragging){
+  dragging.vx=rand(.4,.8);
+  dragging.vy=rand(-.18,-.04);
+  dragging=null;
+ }
+}
+canvas.addEventListener("pointerup",releaseBoat);
+canvas.addEventListener("pointercancel",releaseBoat);
+
+// =======================
+// คำอธิษฐาน
+// =======================
+
+function showLetter(){
+ document.getElementById("letter").style.display="flex";
+}
+function closeLetter(){
+ document.getElementById("letter").style.display="none";
+}
+function saveWish(){
+ let v=document.getElementById("wishInput").value.trim();
+ if(v)document.getElementById("wishText").textContent=v;
+ document.getElementById("wish").value="";
+ closeLetter();
+ createBoat();
+}
+
+// =======================
+// วาดฉากทั้งหมด
+// =======================
+
+function animate(){
+ frame++;
+
+ drawSky();
+ drawMountains();
+ drawStalls();
+ drawWater();
+
+ drawFireworks();
+ updateLanterns();
+ updateBoats();
+
+ requestAnimationFrame(animate);
+}
+
+// เริ่มงานเทศกาล
+createBoat();
+for(let i=0;i<4;i++){
+ setTimeout(createLantern,i*1500);
+}
+animate();
+
+// โคมลอยเพิ่มเติมเป็นระยะ
+setInterval(()=>{
+ if(lanterns.length<12)createLantern();
+},4500);
+
+</script>
+</body>
+</html>
